@@ -2,7 +2,7 @@ from telebot import *
 import webbrowser
 import random
 from collections import deque
-
+ 
 token = '6859364358:AAHHTy-kixk-ab3CkghS5KKsCqaNQqvF_G0'
 bot = telebot.TeleBot(token)
 answers = ['Я не понял, что ты хочешь сказать.', 'Извини, я тебя не понимаю.', 'Я не знаю такой команды.']
