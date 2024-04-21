@@ -2,7 +2,7 @@ from telebot import *
 import webbrowser
 import random
 from collections import deque
- 
+
 token = '6859364358:AAHHTy-kixk-ab3CkghS5KKsCqaNQqvF_G0'
 bot = telebot.TeleBot(token)
 answers = ['Я не понял, что ты хочешь сказать.', 'Извини, я тебя не понимаю.', 'Я не знаю такой команды.']
@@ -23,7 +23,7 @@ def welcome(message):
         del chats[message.chat.id]
     if message.text == '/start':
         # Отправляю приветственный текст
-        bot.send_message(message.chat.id, f'Привет, {message.from_user.first_name}!\nУ меня ты сможешь пообщаться с разными людьми или же узнать свой id\nКонтакт моего разработчика: https://t.me/nookiqq', reply_markup=markup)
+        bot.send_message(message.chat.id, f'Привет, {message.from_user.first_name}!\nУ меня ты сможешь пообщаться с разными людьми или же узнать свой id\nКонтакт моего разработчика: <a href="https://t.me/nookiqq">https://t.me/nookiqq</a>', parse_mode='HTML', reply_markup=markup)
     else:
         bot.send_message(message.chat.id, 'Перекинул тебя в главном меню! Выбирай!', reply_markup=markup)
 
@@ -40,19 +40,19 @@ def info(message):
     elif message.text == '↩️ Назад в меню':
         welcome(message)
     elif message.text == '❌ Закончить чат':
-        # Удаляем пользователя из словаря chats
-        
-        # Отправляем сообщение о завершении чата второму пользователю
-        bot.send_message(chats[message.chat.id], 'Чат завершен!', reply_markup=types.ReplyKeyboardRemove())
-        # Удаляем второго пользователя из словаря chats
-        del chats[chats[message.chat.id]]
+        if message.chat.id in chats and chats[message.chat.id] in chats:
+            bot.send_message(chats[message.chat.id], 'Чат завершен!', reply_markup=types.ReplyKeyboardRemove())
+            del chats[message.chat.id]
+            del chats[chats[message.chat.id]]
         welcome(message)
     else:
-        # Если сообщение не является командой, пересылаем его второму пользователю, если он есть в словаре chats
-        if message.chat.id in chats:
+        if message.content_type in ['audio', 'photo', 'video']:
             bot.forward_message(chats[message.chat.id], message.chat.id, message.message_id)
+        elif message.chat.id in chats:
+            bot.send_message(chats[message.chat.id], message.text, parse_mode='HTML')
         else:
             bot.send_message(message.chat.id, answers[random.randint(0, 2)])
+
 
 def infos(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -71,9 +71,9 @@ def chat(message):
         # Добавляем пользователей в словарь
         chats[users[0]] = users[1]
         chats[users[1]] = users[0]
-        bot.send_message(users[1], 'Начался чат!', reply_markup=markup)
+        bot.send_message(users[1], 'Начался чат!', parse_mode='HTML', reply_markup=markup)
         # Отправляем сообщение о начале чата второму пользователю
-        bot.send_message(users[0], 'Начался чат!', reply_markup=markup)
+        bot.send_message(users[0], 'Начался чат!', parse_mode='HTML', reply_markup=markup)
     else:
         bot.send_message(message.chat.id, 'Найдите другого пользователя, который также нажал на кнопку "Начать чат"')
 
@@ -82,7 +82,6 @@ def aidi(message):
     button1 = types.KeyboardButton('↩️ Назад в меню')
     markup.row(button1)
     bot.send_message(message.chat.id, f'Твой айди:{message.chat.id}', reply_markup=markup)
-
 
 # Обработчик сообщений, который будет пересылать сообщения между пользователями, если они находятся в чате
 @bot.message_handler(func=lambda message: message.chat.id in chats)
@@ -94,10 +93,11 @@ def forward_message(message):
         bot.send_message(chats[message.chat.id], 'Чат завершен!', reply_markup=types.ReplyKeyboardRemove())
         # Удаляем второго пользователя из словаря chats
         del chats[chats[message.chat.id]]
+    elif message.content_type in ['audio', 'photo', 'video']:
+        # Если сообщение является аудио, фото или видео, пересылаем его второму пользователю
+        bot.forward_message(chats[message.chat.id], message.chat.id, message.message_id)
     else:
         # Пересылаем сообщение второму пользователю
-        bot.forward_message(chats[message.chat.id], message.chat.id, message.message_id)
+        bot.send_message(chats[message.chat.id], message.text, parse_mode='HTML')
 
 bot.polling()
-
-
